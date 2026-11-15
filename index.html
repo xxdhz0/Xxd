@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xxd</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #8B0000; /* Bloody Red */
+            font-size: 3rem;
+            text-shadow: 0 0 10px #ff0000, 0 0 20px #550000;
+            letter-spacing: 3px;
+        }
+
+        .creator {
+            color: #555555;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        button {
+            background-color: #0d0d0d;
+            color: #ff4d4d;
+            border: 1px solid #8B0000;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            transition: 0.3s;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #8B0000;
+            color: #ffffff;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: #080808;
+            border: 1px solid #222;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input[type="text"], textarea, input[type="file"] {
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 4px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input[type="file"] {
+            cursor: pointer;
+        }
+
+        .post-card {
+            background: #121212;
+            border: 1px solid #330000;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .post-card p {
+            word-break: break-word;
+            margin-bottom: 10px;
+        }
+
+        .post-card img {
+            max-width: 100%;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .delete-btn {
+            background: transparent;
+            color: #ff4d4d;
+            border: 1px solid #ff4d4d;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+
+        .delete-btn:hover {
+            background: #ff4d4d;
+            color: #000;
+        }
+
+        footer {
+            margin-top: auto;
+            color: #444;
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Xxd.</h1>
+        <div class="creator">made by Vandal</div>
+    </header>
+
+    <div class="nav-buttons">
+        <button onclick="showSection('view-posts-section')">View Posts</button>
+        <button onclick="showSection('post-note-section')">Post a note</button>
+    </div>
+
+    <!-- View Posts Section -->
+    <div id="view-posts-section" class="container">
+        <h2 style="color: #8B0000; margin-bottom: 15px;">Feed</h2>
+        <div id="posts-container">
+            <p style="color: #666;">No posts yet. Be the first to add one!</p>
+        </div>
+    </div>
+
+    <!-- Post a Note Section -->
+    <div id="post-note-section" class="container hidden">
+        <h2 style="color: #8B0000; margin-bottom: 15px;">Create a Note</h2>
+        <form id="note-form" onsubmit="handlePost(event)">
+            <textarea id="post-text" placeholder="Write your text here..." required></textarea>
+            <input type="file" id="post-image" accept="image/*">
+            <button type="submit">Publish</button>
+        </form>
+    </div>
+
+    <footer>
+        Xxd Archive &bull; All systems secure.
+    </footer>
+
+    <script>
+        // Switch between views
+        function showSection(sectionId) {
+            document.getElementById('view-posts-section').classList.add('hidden');
+            document.getElementById('post-note-section').classList.add('hidden');
+            document.getElementById(sectionId).classList.remove('hidden');
+            if(sectionId === 'view-posts-section') {
+                loadPosts();
+            }
+        }
+
+        // Load posts from localStorage
+        function loadPosts() {
+            const container = document.getElementById('posts-container');
+            const posts = JSON.parse(localStorage.getItem('xxd_posts')) || [];
+
+            if (posts.length === 0) {
+                container.innerHTML = '<p style="color: #666;">No posts yet. Be the first to add one!</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            posts.forEach((post, index) => {
+                const card = document.createElement('div');
+                card.className = 'post-card';
+                
+                let contentHTML = `<p>${escapeHtml(post.text)}</p>`;
+                if (post.image) {
+                    contentHTML += `<img src="${post.image}" alt="User upload">`;
+                }
+                
+                contentHTML += `<br><button class="delete-btn" onclick="deletePost(${index})">Delete</button>`;
+                card.innerHTML = contentHTML;
+                container.appendChild(card);
+            });
+        }
+
+        // Handle creating a new post
+        function handlePost(event) {
+            event.preventDefault();
+            const text = document.getElementById('post-text').value;
+            const imageInput = document.getElementById('post-image');
+            
+            const posts = JSON.parse(localStorage.getItem('xxd_posts')) || [];
+
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    posts.unshift({ text: text, image: e.target.result });
+                    localStorage.setItem('xxd_posts', JSON.stringify(posts));
+                    document.getElementById('note-form').reset();
+                    showSection('view-posts-section');
+                };
+                reader.readAsDataURL(imageInput.files[0]);
+            } else {
+                posts.unshift({ text: text, image: null });
+                localStorage.setItem('xxd_posts', JSON.stringify(posts));
+                document.getElementById('note-form').reset();
+                showSection('view-posts-section');
+            }
+        }
+
+        // Delete post function
+        function deletePost(index) {
+            let posts = JSON.parse(localStorage.getItem('xxd_posts')) || [];
+            posts.splice(index, 1);
+            localStorage.setItem('xxd_posts', JSON.stringify(posts));
+            loadPosts();
+        }
+
+        // Simple HTML escape for safety
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Initial load
+        loadPosts();
+    </script>
+</body>
+</html>
